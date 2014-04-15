@@ -30,22 +30,23 @@
     self.textLabel1.alpha = 0;
     self.textLabel2.alpha = 0;
     
+    // this is based on the view hierarchy in the storyboard
+    self.topLabel = self.textLabel2;
+    self.bottomLabel = self.textLabel1;
+    
     NSString *mySecretMessage = @"This is a my replication of Secret's text animation. It looks like one fancy label, but it's actually two UITextLabels on top of each other! What do you think?";
     
     self.numWhiteCharacters = 0;
     
-    NSAttributedString *initialAttributedText = [self randomlyFadedAttributedStringFromString:mySecretMessage];
-    self.textLabel2.attributedText = initialAttributedText;
-    
-    self.attributedString = [self randomlyFadedAttributedStringFromAttributedString:initialAttributedText];
-    self.textLabel1.attributedText = self.attributedString;
+    __block NSAttributedString *initialAttributedText = [self randomlyFadedAttributedStringFromString:mySecretMessage];
+    self.topLabel.attributedText = initialAttributedText;
     
     __weak NTRViewController *weakSelf = self;
     [UIView animateWithDuration:0.1 animations:^{
-        weakSelf.textLabel2.alpha = 1;
+        weakSelf.topLabel.alpha = 1;
     } completion:^(BOOL finished) {
-        weakSelf.topLabel = self.textLabel2;
-        weakSelf.bottomLabel = self.textLabel1;
+        weakSelf.attributedString = [weakSelf randomlyFadedAttributedStringFromAttributedString:initialAttributedText];
+        weakSelf.bottomLabel.attributedText = weakSelf.attributedString;
         [weakSelf performAnimation];
     }];
 }
