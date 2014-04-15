@@ -16,8 +16,8 @@
 @property (strong, nonatomic) NSAttributedString *attributedString;
 @property (assign, nonatomic) NSUInteger numWhiteCharacters;
 
-@property (strong, nonatomic) UILabel *visibleLabel;
-@property (strong, nonatomic) UILabel *hiddenLabel;
+@property (strong, nonatomic) UILabel *topLabel;
+@property (strong, nonatomic) UILabel *bottomLabel;
 
 @end
 
@@ -35,17 +35,17 @@
     self.numWhiteCharacters = 0;
     
     NSAttributedString *initialAttributedText = [self randomlyFadedAttributedStringFromString:mySecretMessage];
-    self.textLabel1.attributedText = initialAttributedText;
+    self.textLabel2.attributedText = initialAttributedText;
     
     self.attributedString = [self randomlyFadedAttributedStringFromAttributedString:initialAttributedText];
-    self.textLabel2.attributedText = self.attributedString;
+    self.textLabel1.attributedText = self.attributedString;
     
     __weak NTRViewController *weakSelf = self;
     [UIView animateWithDuration:0.1 animations:^{
-        weakSelf.textLabel1.alpha = 1;
+        weakSelf.textLabel2.alpha = 1;
     } completion:^(BOOL finished) {
-        weakSelf.visibleLabel = self.textLabel1;
-        weakSelf.hiddenLabel = self.textLabel2;
+        weakSelf.topLabel = self.textLabel2;
+        weakSelf.bottomLabel = self.textLabel1;
         [weakSelf performAnimation];
     }];
 }
@@ -57,13 +57,13 @@
                           delay:0
                         options:UIViewAnimationOptionCurveEaseIn
                      animations:^{
-                         weakSelf.hiddenLabel.alpha = 1;
+                         weakSelf.bottomLabel.alpha = 1;
                      } completion:^(BOOL finished) {
                          [weakSelf resetLabels];
                          
                          // keep performing the animation until all letters are white
                          if (weakSelf.numWhiteCharacters == [weakSelf.attributedString length]) {
-                             [weakSelf.hiddenLabel removeFromSuperview];
+                             [weakSelf.bottomLabel removeFromSuperview];
                          } else {
                              [weakSelf performAnimation];
                          }
@@ -72,24 +72,21 @@
 
 - (void)resetLabels
 {
-    // the hidden label is now visible, so switch the hidden and visible
-    UILabel *oldHiddenLabel = self.hiddenLabel;
-    UILabel *oldVisibleLabel = self.visibleLabel;
-    
-    self.hiddenLabel = oldVisibleLabel;
-    self.visibleLabel = oldHiddenLabel;
-    
-    [self.hiddenLabel removeFromSuperview];
-    
-    // hide the new hidden label
-    self.hiddenLabel.alpha = 0;
+    [self.topLabel removeFromSuperview];
+    self.topLabel.alpha = 0;
     
     // recalculate attributed string with the new white color values
     self.attributedString = [self randomlyFadedAttributedStringFromAttributedString:self.attributedString];
-    self.hiddenLabel.attributedText = self.attributedString;
-    // make sure the hidden label is now on top
-    [self.view insertSubview:self.hiddenLabel belowSubview:self.visibleLabel];
-
+    self.topLabel.attributedText = self.attributedString;
+    
+    [self.view insertSubview:self.topLabel belowSubview:self.bottomLabel];
+    
+    //  the top label is now on the bottom, so switch
+    UILabel *oldBottom = self.bottomLabel;
+    UILabel *oldTopLabel = self.topLabel;
+    
+    self.bottomLabel = oldTopLabel;
+    self.topLabel = oldBottom;
 }
 
 - (NSAttributedString *)randomlyFadedAttributedStringFromString:(NSString *)string
