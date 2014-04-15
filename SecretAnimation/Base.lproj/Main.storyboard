@@ -34,12 +34,13 @@
                         <color key="backgroundColor" red="0.61176470589999998" green="0.031372549020000001" blue="0.1960784314" alpha="1" colorSpace="calibratedRGB"/>
                     </view>
                     <connections>
-                        <outlet property="textLabel" destination="Raa-0a-sIw" id="s0m-Yg-Q0n"/>
+                        <outlet property="textLabel1" destination="Raa-0a-sIw" id="MUz-Dd-DF8"/>
                         <outlet property="textLabel2" destination="7VG-d6-jp9" id="cKQ-VE-1qt"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
             </objects>
+            <point key="canvasLocation" x="38" y="-24"/>
         </scene>
     </scenes>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">

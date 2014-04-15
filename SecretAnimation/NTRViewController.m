@@ -10,7 +10,7 @@
 
 @interface NTRViewController ()
 
-@property (weak, nonatomic) IBOutlet UILabel *textLabel;
+@property (weak, nonatomic) IBOutlet UILabel *textLabel1;
 @property (weak, nonatomic) IBOutlet UILabel *textLabel2;
 
 @property (strong, nonatomic) NSAttributedString *attributedString;
@@ -27,123 +27,147 @@
 {
     [super viewDidLoad];
     
-    self.textLabel.alpha = 0;
+    self.textLabel1.alpha = 0;
     self.textLabel2.alpha = 0;
-}
-
-- (void)viewDidAppear:(BOOL)animated
-{
+    
     NSString *mySecretMessage = @"This is a my replication of Secret's text animation. It looks like one fancy label, but it's actually two UITextLabels on top of each other! What do you think?";
     
     self.numWhiteCharacters = 0;
     
-    NSAttributedString *initialText = [self randomlyFadedAttStringFromString:mySecretMessage];
-    self.textLabel.attributedText = initialText;
-
-    self.attributedString = [self randomlyFadedAttStringSecond:initialText];
+    NSAttributedString *initialAttributedText = [self randomlyFadedAttributedStringFromString:mySecretMessage];
+    self.textLabel1.attributedText = initialAttributedText;
+    
+    self.attributedString = [self randomlyFadedAttributedStringFromAttributedString:initialAttributedText];
     self.textLabel2.attributedText = self.attributedString;
     
+    __weak NTRViewController *weakSelf = self;
     [UIView animateWithDuration:0.1 animations:^{
-        self.textLabel.alpha = 1;
-        self.visibleLabel = self.textLabel;
-        self.hiddenLabel = self.textLabel2;
+        weakSelf.textLabel1.alpha = 1;
     } completion:^(BOOL finished) {
-        [self performAnimation];
+        weakSelf.visibleLabel = self.textLabel1;
+        weakSelf.hiddenLabel = self.textLabel2;
+        [weakSelf performAnimation];
     }];
-    
-
 }
 
 - (void)performAnimation
 {
-    self.attributedString = [self randomlyFadedAttStringSecond:self.attributedString];
-    self.hiddenLabel.attributedText = self.attributedString;
-    
+    __weak NTRViewController *weakSelf = self;
     [UILabel animateWithDuration:0.1
                           delay:0
                         options:UIViewAnimationOptionCurveEaseIn
                      animations:^{
-                         self.hiddenLabel.alpha = 1;
+                         weakSelf.hiddenLabel.alpha = 1;
                      } completion:^(BOOL finished) {
-                         UILabel *oldHiddenLabel = self.hiddenLabel;
-                         UILabel *oldVisibleLabel = self.visibleLabel;
+                         [weakSelf resetLabels];
                          
-                         self.visibleLabel.alpha = 0;
-                         [self.visibleLabel removeFromSuperview];
-                         [self.view insertSubview:oldVisibleLabel belowSubview:self.hiddenLabel];
-                         
-                         self.hiddenLabel = oldVisibleLabel;
-                         self.visibleLabel = oldHiddenLabel;
-                         if (self.numWhiteCharacters != [self.attributedString length]) {
-                             [self performAnimation];
+                         // keep performing the animation until all letters are white
+                         if (weakSelf.numWhiteCharacters == [weakSelf.attributedString length]) {
+                             [weakSelf.hiddenLabel removeFromSuperview];
                          } else {
-                             [self.hiddenLabel removeFromSuperview];
+                             [weakSelf performAnimation];
                          }
                      }];
 }
 
-- (NSAttributedString *)randomlyFadedAttStringFromString:(NSString *)string
+- (void)resetLabels
 {
-    NSMutableAttributedString *outString = [[NSMutableAttributedString alloc] initWithString:string];
+    // the hidden label is now visible, so switch the hidden and visible
+    UILabel *oldHiddenLabel = self.hiddenLabel;
+    UILabel *oldVisibleLabel = self.visibleLabel;
     
-    for (NSUInteger i = 0; i < string.length; i ++) {
-        CGFloat alpha = arc4random_uniform(100) / 100.0;
-        if (alpha == 1.0) {
-            self.numWhiteCharacters++;
-        }
-        UIColor *color = [UIColor colorWithWhite:1.0 alpha:alpha];
-        NSInteger colorIndex = arc4random() % 10;
-        if (colorIndex != 0) {
-            color = [UIColor clearColor];
-        }
-        [outString addAttribute:NSForegroundColorAttributeName value:(id)color range:NSMakeRange(i, 1)];
-    }
+    self.hiddenLabel = oldVisibleLabel;
+    self.visibleLabel = oldHiddenLabel;
     
-    return [outString copy];
+    [self.hiddenLabel removeFromSuperview];
+    
+    // hide the new hidden label
+    self.hiddenLabel.alpha = 0;
+    
+    // recalculate attributed string with the new white color values
+    self.attributedString = [self randomlyFadedAttributedStringFromAttributedString:self.attributedString];
+    self.hiddenLabel.attributedText = self.attributedString;
+    // make sure the hidden label is now on top
+    [self.view insertSubview:self.hiddenLabel belowSubview:self.visibleLabel];
+
 }
 
-- (NSAttributedString *)randomlyFadedAttStringSecond:(NSAttributedString *)string
+- (NSAttributedString *)randomlyFadedAttributedStringFromString:(NSString *)string
 {
-    NSMutableAttributedString *mutableString = [string mutableCopy];
-    for (NSUInteger i = 0; i < string.length; i ++) {
-        [string enumerateAttribute:NSForegroundColorAttributeName
-                           inRange:NSMakeRange(i, 1)
-                           options:NSAttributedStringEnumerationLongestEffectiveRangeNotRequired
-                        usingBlock:^(id value, NSRange range, BOOL *stop) {
-                            UIColor *color = value;
-                            
-                            if ([color isEqual:[UIColor clearColor]])
-                            {
-                                UIColor *color;
-                                NSInteger colorIndex = arc4random() % 4;
-                                if (colorIndex != 0) {
-                                    color = [UIColor clearColor];
-                                } else {
-                                    CGFloat alpha = arc4random_uniform(100) / 100.0;
-                                    if (alpha == 1.0) {
-                                        self.numWhiteCharacters++;
-                                    }
-                                    
-                                    color = [UIColor colorWithWhite:1.0 alpha:alpha];
-                                }
-                                [mutableString addAttribute:NSForegroundColorAttributeName value:color range:range];
-                            } else {
-                                CGFloat alpha = CGColorGetAlpha(color.CGColor);
-                                if (alpha != 1.0) {
-                                    NSInteger random = alpha * 100 + arc4random_uniform(100 - alpha * 100 + 1);
-                                    CGFloat randomAlpha = random / 100.0;
-                                    if (randomAlpha == 1.0) {
-                                        self.numWhiteCharacters++;
-                                    }
-                                    UIColor *color = [UIColor colorWithWhite:1.0 alpha:randomAlpha];
-                                    [mutableString addAttribute:NSForegroundColorAttributeName value:color range:range];
-                                }
-                            }
-                        }];
+    NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:string];
+    
+    for (NSUInteger i = 0; i < [string length]; i ++) {
+        UIColor *color = [self whiteColorWithClearColorProbability:10];
+        [attributedString addAttribute:NSForegroundColorAttributeName value:(id)color range:NSMakeRange(i, 1)];
+        [self updateNumWhiteCharactersForColor:color];
+    }
+    
+    return [attributedString copy];
+}
+
+- (NSAttributedString *)randomlyFadedAttributedStringFromAttributedString:(NSAttributedString *)attributedString
+{
+    NSMutableAttributedString *mutableAttributedString = [attributedString mutableCopy];
+    
+    __weak NTRViewController *weakSelf = self;
+    for (NSUInteger i = 0; i < attributedString.length; i ++) {
+        [attributedString enumerateAttribute:NSForegroundColorAttributeName
+                                     inRange:NSMakeRange(i, 1)
+                                     options:NSAttributedStringEnumerationLongestEffectiveRangeNotRequired
+                                  usingBlock:^(id value, NSRange range, BOOL *stop) {
+                                      UIColor *initialColor = value;
+                                      UIColor *newColor = [weakSelf whiteColorFromInitialColor:initialColor];
+                                      if (newColor) {
+                                          [mutableAttributedString addAttribute:NSForegroundColorAttributeName value:newColor range:range];
+                                          [weakSelf updateNumWhiteCharactersForColor:newColor];
+                                      }
+                                  }];
         
     }
     
-    return [mutableString copy];
+    return [mutableAttributedString copy];
+}
+
+- (void)updateNumWhiteCharactersForColor:(UIColor *)color
+{
+    CGFloat alpha = CGColorGetAlpha(color.CGColor);
+    if (alpha == 1.0) {
+        self.numWhiteCharacters++;
+    }
+}
+
+- (UIColor *)whiteColorFromInitialColor:(UIColor *)initialColor
+{
+    UIColor *newColor;
+    if ([initialColor isEqual:[UIColor clearColor]])
+    {
+        newColor = [self whiteColorWithClearColorProbability:4];
+    } else {
+        CGFloat alpha = CGColorGetAlpha(initialColor.CGColor);
+        if (alpha != 1.0) {
+            newColor = [self whiteColorWithMinAlpha:alpha];
+        }
+    }
+    return newColor;
+}
+
+- (UIColor *)whiteColorWithClearColorProbability:(NSInteger)probability
+{
+    UIColor *color;
+    NSInteger colorIndex = arc4random() % probability;
+    if (colorIndex != 0) {
+        color = [UIColor clearColor];
+    } else {
+        color = [self whiteColorWithMinAlpha:0];
+    }
+    return color;
+}
+
+- (UIColor *)whiteColorWithMinAlpha:(CGFloat)minAlpha
+{
+    NSInteger randomNumber = minAlpha * 100 + arc4random_uniform(100 - minAlpha * 100 + 1);
+    CGFloat randomAlpha = randomNumber / 100.0;
+    return [UIColor colorWithWhite:1.0 alpha:randomAlpha];
 }
 
 - (BOOL)prefersStatusBarHidden
